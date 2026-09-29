@@ -4,38 +4,464 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Eternal Waltz Quiz</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #0b0f19;
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .quiz-box {
+      width: 100%;
+      max-width: 440px;
+      background-color: #162032;
+      border: 1px solid #2b3952;
+      border-radius: 14px;
+      padding: 26px 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 4px;
+    }
+
+    .sub {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      margin-bottom: 16px;
+    }
+
+    .info {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .btn-main {
+      width: 100%;
+      padding: 15px;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background-color: #2563eb;
+      color: #ffffff;
+      transition: background-color 0.15s;
+    }
+
+    .btn-main:active {
+      background-color: #1d4ed8;
+      transform: scale(0.98);
+    }
+
+    /* Thanh thông tin câu hỏi & giờ */
+    .quiz-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: #94a3b8;
+      font-weight: 600;
+      border-bottom: 1px solid #2b3952;
+      padding-bottom: 10px;
+      margin-bottom: 18px;
+    }
+
+    #timer {
+      color: #fbbf24;
+      font-family: monospace;
+      font-size: 1.1rem;
+    }
+
+    #q-title {
+      font-size: 1.05rem;
+      line-height: 1.5;
+      text-align: left;
+      font-weight: 600;
+      margin-bottom: 20px;
+      min-height: 50px;
+    }
+
+    /* Danh sách đáp án */
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-opt {
+      width: 100%;
+      text-align: left;
+      padding: 14px 16px;
+      background-color: #243047;
+      border: 1px solid #334466;
+      border-radius: 10px;
+      color: #f1f5f9;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      cursor: pointer;
+      outline: none;
+      transition: background-color 0.1s, transform 0.1s;
+    }
+
+    .btn-opt:active, .btn-opt.active {
+      background-color: #2563eb !important;
+      border-color: #60a5fa !important;
+      color: #ffffff !important;
+      transform: scale(0.98);
+    }
+
+    /* Kết quả */
+    .score-val {
+      font-size: 4rem;
+      font-weight: 800;
+      color: #fbbf24;
+      margin: 12px 0;
+    }
+
+    .res-msg {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+  </style>
 </head>
 <body>
 
-  <div class="quiz-container">
-    <!-- MÀN HÌNH BẮT ĐẦU: Căn giữa, chỉ có 1 nút bấm to rõ -->
+  <div class="quiz-box">
+    <!-- MÀN HÌNH BẮT ĐẦU -->
     <div id="screen-start">
       <h1>Eternal Waltz</h1>
       <p class="sub">JackNaib Itabooth</p>
-      <div class="meta-tag">10 câu • 5 phút • Chỉ làm 1 lần</div>
-      <button type="button" class="btn-start" onclick="startQuiz()">BẮT ĐẦU LÀM BÀI</button>
+      <p class="info">10 câu hỏi • Thời gian: 5 phút<br>Mỗi người chỉ làm 1 lần</p>
+      <button type="button" class="btn-main" id="btn-start">BẮT ĐẦU LÀM BÀI</button>
     </div>
 
-    <!-- MÀN HÌNH CÂU HỎI: Bấm đáp án là tự nhảy câu kế tiếp -->
+    <!-- MÀN HÌNH THI (TỰ LƯỚT CÂU) -->
     <div id="screen-quiz" style="display: none;">
-      <div class="top-bar">
-        <span id="q-number">Câu 1/10</span>
-        <span id="timer-text">05:00</span>
+      <div class="quiz-bar">
+        <span id="q-counter">Câu 1/10</span>
+        <span id="timer">05:00</span>
       </div>
-      <h2 id="q-content">Đang tải câu hỏi...</h2>
-      <div id="options-wrap" class="options-wrap"></div>
+      <h2 id="q-title">Nội dung câu hỏi...</h2>
+      <div id="options-box" class="options-list"></div>
     </div>
 
-    <!-- MÀN HÌNH KẾT QUẢ -->
+    <!-- MÀN HÌNH KẾT QUẢ ĐÓNG -->
     <div id="screen-result" style="display: none;">
       <h2>KẾT QUẢ</h2>
-      <div class="score-num" id="score-text">0/10</div>
-      <p class="note">Mỗi người chỉ được làm bài 1 lần.</p>
-      <button type="button" class="btn-reset" onclick="resetQuiz()">🔄 Bấm để reset làm lại (Test)</button>
+      <div class="score-val" id="score-text">0/10</div>
+      <p class="res-msg">Bạn đã hoàn thành bài thi.<br>Mỗi người chỉ được làm 1 lần duy nhất.</p>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script>
+    const BANK = {
+      de1: [
+        {
+          q: "Nhân vật Naib Subedar có bao nhiêu găng tay vào thời điểm đầu ra mắt?",
+          options: [
+            { text: "4 cái", isCorrect: true },
+            { text: "5 cái", isCorrect: false },
+            { text: "3 cái", isCorrect: false },
+            { text: "2 cái", isCorrect: false }
+          ]
+        },
+        {
+          q: "Trong hồ sơ của Jack the Ripper, chủ trang viên ghi nhận anh hứng thú (Interest) thứ gì?",
+          options: [
+            { text: "Giải phẫu", isCorrect: true },
+            { text: "Đêm sương mù", isCorrect: false },
+            { text: "Phụ nữ", isCorrect: false },
+            { text: "Hội họa", isCorrect: false }
+          ]
+        },
+        {
+          q: "Gậy hoa hồng của Jack có mấy phiên bản?",
+          options: [
+            { text: "2 phiên bản: đỏ và xanh", isCorrect: true },
+            { text: "2 phiên bản: đỏ và hồng", isCorrect: false },
+            { text: "3 phiên bản: đỏ, xanh và trắng", isCorrect: false },
+            { text: "3 phiên bản: đỏ, hồng và xanh", isCorrect: false }
+          ]
+        },
+        {
+          q: "Skin COA có cả Jack và Naib là rơi vào mùa nào của COA?",
+          options: [
+            { text: "Mùa 2", isCorrect: true },
+            { text: "Mùa 1", isCorrect: false },
+            { text: "Mùa 3", isCorrect: false },
+            { text: "Mùa 4", isCorrect: false }
+          ]
+        },
+        {
+          q: "Jack xuất hiện bao nhiêu lần trong tranh/ảnh official khi Naib đang ăn?",
+          options: [
+            { text: "1 lần", isCorrect: true },
+            { text: "0 lần", isCorrect: false },
+            { text: "3 lần", isCorrect: false },
+            { text: "4 lần", isCorrect: false }
+          ]
+        },
+        {
+          q: "Tình trạng hiện tại của Naib Subdedar trong hồ sơ của trang viên là?",
+          options: [
+            { text: "Không rõ", isCorrect: true },
+            { text: "Đã bị cấm vì phá luật", isCorrect: false },
+            { text: "Đã bị loại khỏi trò chơi", isCorrect: false },
+            { text: "Đã qua đời", isCorrect: false }
+          ]
+        },
+        {
+          q: "Ngày nhân vật của Jack the Ripper là ngày bao nhiêu?",
+          options: [
+            { text: "07/08", isCorrect: true },
+            { text: "08/08", isCorrect: false },
+            { text: "08/07", isCorrect: false },
+            { text: "07/07", isCorrect: false }
+          ]
+        },
+        {
+          q: "Năm mà Naib và Jack đăng quang NYMPH?",
+          options: [
+            { text: "Naib 2025 – Jack 2024", isCorrect: true },
+            { text: "Naib 2024 – Jack 2025", isCorrect: false },
+            { text: "Naib 2023 – Jack 2024", isCorrect: false },
+            { text: "Naib 2024 – Jack 2023", isCorrect: false }
+          ]
+        },
+        {
+          q: "Mục đích của Naib Subedar khi tham gia trò chơi của trang viên là?",
+          options: [
+            { text: "Khử đối tượng theo yêu cầu khách hàng", isCorrect: true },
+            { text: "Tìm lại cảm giác nơi chiến trường", isCorrect: false },
+            { text: "Kiếm chút kinh phí để trở về quê hương", isCorrect: false },
+            { text: "Để ăn sập trang viên", isCorrect: false }
+          ]
+        },
+        {
+          q: "Skin S limited đầu tiên của Jack tên là?",
+          options: [
+            { text: "Evil Eye Host", isCorrect: true },
+            { text: "Golden Tentacle", isCorrect: false },
+            { text: "Soul Emissary", isCorrect: false },
+            { text: "Tuberose", isCorrect: false }
+          ]
+        }
+      ],
+      de2: [
+        {
+          q: "Trong hồ sơ của Naib Subedar, chủ trang viên ghi nhận cậu thích (Like) thứ gì?",
+          options: [
+            { text: "Đao kiếm", isCorrect: true },
+            { text: "Đồ ăn", isCorrect: false },
+            { text: "Tiền bạc", isCorrect: false },
+            { text: "Gia Đình", isCorrect: false }
+          ]
+        },
+        {
+          q: "Nhân vật Jack ban đầu có kỹ năng gì?",
+          options: [
+            { text: "Tạo một vùng sương mù ở khu vực survivor hoạt động và chỉ chém ra gió khi bên trong.", isCorrect: true },
+            { text: "Tạo một vùng sương mù ở khu vực survivor hoạt động và tàng hình khi đi bên trong vùng.", isCorrect: false },
+            { text: "Chém gió và mất 0,5 máu của survivor", isCorrect: false },
+            { text: "Chém gió và mất 0,25 máu của survivor", isCorrect: false }
+          ]
+        },
+        {
+          q: "Mr. Inference và Tuberose đã gặp nhau vào dịp nào lần đầu tiên?",
+          options: [
+            { text: "Năm Anniversary thứ 4", isCorrect: true },
+            { text: "Năm Anniversary thứ 2", isCorrect: false },
+            { text: "Năm Anniversary thứ 3", isCorrect: false },
+            { text: "Năm Anniversary thứ 5", isCorrect: false }
+          ]
+        },
+        {
+          q: "Trong các series dưới đây, series nào Jack và Naib là hai phe đối địch với nhau?",
+          options: [
+            { text: "Call of Abyss", isCorrect: true },
+            { text: "Tết 2026", isCorrect: false },
+            { text: "Halloween 2023", isCorrect: false },
+            { text: "Cầu 1 Mùa 8 – Mafia", isCorrect: false }
+          ]
+        },
+        {
+          q: "Sinh nhật của Naib Subedar là ngày bao nhiêu?",
+          options: [
+            { text: "23/07", isCorrect: true },
+            { text: "15/07", isCorrect: false },
+            { text: "22/07", isCorrect: false },
+            { text: "22/08", isCorrect: false }
+          ]
+        },
+        {
+          q: "Tình trạng hiện tại của Jack the Ripper trong hồ sơ của trang viên là?",
+          options: [
+            { text: "Đã qua đời", isCorrect: true },
+            { text: "Không rõ", isCorrect: false },
+            { text: "Đã bị cấm vì phá luật", isCorrect: false },
+            { text: "Đã bị loại khỏi trò chơi", isCorrect: false }
+          ]
+        },
+        {
+          q: "Skin S limited đầu tiên của Naib tên là?",
+          options: [
+            { text: "Man in Red", isCorrect: true },
+            { text: "Cheshire Cat", isCorrect: false },
+            { text: "Atsushi Nakajima (Skin Collab với Bungo Stray Dog)", isCorrect: false },
+            { text: "Cabinet of Curiosities", isCorrect: false }
+          ]
+        },
+        {
+          q: "Động vật tượng trưng cho Naib Subedar và Jack the Ripper theo game là?",
+          options: [
+            { text: "Gấu trúc đỏ - Không có", isCorrect: true },
+            { text: "Gấu trúc đỏ - Chó", isCorrect: false },
+            { text: "Gấu trúc đỏ - Quạ", isCorrect: false },
+            { text: "Gấu trúc đỏ - Jack kiki", isCorrect: false }
+          ]
+        },
+        {
+          q: "Lý do Jack the Ripper khi tham gia trò chơi của trang viên là?",
+          options: [
+            { text: "Theo lời thầy giáo giao phó cho mình", isCorrect: true },
+            { text: "Tham gia để tạo ra tác phẩm nghệ thuật cuối cùng", isCorrect: false },
+            { text: "Nhân cách kia chấp nhận lời mời", isCorrect: false },
+            { text: "Không được mời, tự ý tham gia", isCorrect: false }
+          ]
+        },
+        {
+          q: "Lần lượt, Jack và Naib được chủ trang viên đánh số là đợt tham gia/ thử nghiệm trò chơi thứ mấy?",
+          options: [
+            { text: "2 – 9", isCorrect: true },
+            { text: "3 – 5", isCorrect: false },
+            { text: "3 – 9", isCorrect: false },
+            { text: "2 – 5", isCorrect: false }
+          ]
+        }
+      ]
+    };
+
+    const LOCK_KEY = "eternal_quiz_saved_score";
+    let list = [];
+    let idx = 0;
+    let score = 0;
+    let timer = null;
+    let blocked = false;
+
+    function shuffle(arr) {
+      const c = [...arr];
+      for (let i = c.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [c[i], c[j]] = [c[j], c[i]];
+      }
+      return c;
+    }
+
+    // Kiểm tra xem đã hoàn thành trước đó chưa
+    const saved = localStorage.getItem(LOCK_KEY);
+    if (saved !== null) {
+      showResult(saved);
+    }
+
+    document.getElementById("btn-start").addEventListener("click", function() {
+      const chosen = Math.random() < 0.5 ? "de1" : "de2";
+      list = shuffle(BANK[chosen]).map(item => ({
+        q: item.q,
+        options: shuffle(item.options)
+      }));
+
+      idx = 0;
+      score = 0;
+      blocked = false;
+
+      document.getElementById("screen-start").style.display = "none";
+      document.getElementById("screen-quiz").style.display = "block";
+      document.getElementById("screen-result").style.display = "none";
+
+      startTimer(300);
+      renderQ();
+    });
+
+    function renderQ() {
+      blocked = false;
+      const current = list[idx];
+      document.getElementById("q-counter").innerText = `Câu ${idx + 1}/10`;
+      document.getElementById("q-title").innerText = current.q;
+
+      const box = document.getElementById("options-box");
+      box.innerHTML = "";
+
+      current.options.forEach(opt => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "btn-opt";
+        b.innerText = opt.text;
+
+        b.onclick = function() {
+          if (blocked) return;
+          blocked = true;
+
+          b.classList.add("active");
+          if (opt.isCorrect) score++;
+
+          setTimeout(() => {
+            idx++;
+            if (idx < list.length) {
+              renderQ();
+            } else {
+              finish();
+            }
+          }, 160);
+        };
+
+        box.appendChild(b);
+      });
+    }
+
+    function startTimer(secs) {
+      let rem = secs;
+      const t = document.getElementById("timer");
+      timer = setInterval(() => {
+        rem--;
+        const m = Math.floor(rem / 60);
+        const s = rem % 60;
+        t.innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        if (rem <= 0) {
+          clearInterval(timer);
+          finish();
+        }
+      }, 1000);
+    }
+
+    function finish() {
+      clearInterval(timer);
+      localStorage.setItem(LOCK_KEY, score);
+      showResult(score);
+    }
+
+    function showResult(val) {
+      document.getElementById("screen-start").style.display = "none";
+      document.getElementById("screen-quiz").style.display = "none";
+      document.getElementById("screen-result").style.display = "block";
+      document.getElementById("score-text").innerText = `${val}/10`;
+    }
+  </script>
 </body>
 </html>
