@@ -1,5 +1,5 @@
-/* DỮ LIỆU CÂU HỎI CHUẨN XÁC TỪ FILE PDF (Đáp án đúng có isCorrect: true) */
-const QUIZ_DATA = {
+// DỮ LIỆU CÂU HỎI (Đáp án đúng là isCorrect: true)
+const QUIZ_BANK = {
   de1: [
     {
       q: "Nhân vật Naib Subedar có bao nhiêu găng tay vào thời điểm đầu ra mắt?",
@@ -47,7 +47,7 @@ const QUIZ_DATA = {
       ]
     },
     {
-      q: "Tình trạng hiện tại của Naib Subedar trong hồ sơ của trang viên là?",
+      q: "Tình trạng hiện tại của Naib Subdedar trong hồ sơ của trang viên là?",
       options: [
         { text: "Không rõ", isCorrect: true },
         { text: "Đã bị cấm vì phá luật", isCorrect: false },
@@ -186,178 +186,147 @@ const QUIZ_DATA = {
   ]
 };
 
-// KHÓA THIẾT BỊ: Key lưu trữ trong trình duyệt
-const STORAGE_LOCK_KEY = "eternal_waltz_quiz_lock";
-const TIMER_KEY = "eternal_waltz_quiz_endtime";
+const LOCK_KEY = "eternal_waltz_quiz_locked";
+const TIMER_KEY = "eternal_waltz_timer_deadline";
 
-let currentExamKey = "de1";
-let randomizedQuestions = [];
-let timerInterval = null;
+let quizList = [];
+let currentIndex = 0;
+let currentScore = 0;
+let timerId = null;
+let playerName = "";
 
-// Hàm xáo trộn mảng (Fisher-Yates)
-function shuffleArray(arr) {
-  const cloned = [...arr];
-  for (let i = cloned.length - 1; i > 0; i--) {
+// Hàm xáo trộn mảng
+function shuffle(arr) {
+  const clone = [...arr];
+  for (let i = clone.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [cloned[i], cloned[j]] = [cloned[j], cloned[i]];
+    [clone[i], clone[j]] = [clone[j], clone[i]];
   }
-  return cloned;
+  return clone;
 }
 
-// Kiểm tra nếu người này đã từng làm bài trước đó
+// Kiểm tra nếu thiết bị đã làm bài trước đó
 window.addEventListener("DOMContentLoaded", () => {
-  const lockedData = localStorage.getItem(STORAGE_LOCK_KEY);
-  if (lockedData) {
-    displayResultScreen(JSON.parse(lockedData));
+  const savedResult = localStorage.getItem(LOCK_KEY);
+  if (savedResult) {
+    showResultScreen(JSON.parse(savedResult));
   }
 });
 
-// Chọn Đề 1 hoặc Đề 2
-function chooseExam(examKey) {
-  currentExamKey = examKey;
-  document.querySelectorAll(".exam-card").forEach((card, index) => {
-    card.classList.toggle("active", (index === 0 && examKey === 'de1') || (index === 1 && examKey === 'de2'));
-  });
-}
+function handleStart() {
+  const nameInput = document.getElementById("player-name").value.trim();
+  playerName = nameInput || "Thám tử";
 
-// Bắt đầu làm bài
-function startQuiz() {
-  const nameVal = document.getElementById("player-name").value.trim();
-  const playerName = nameVal || "Khách mời vô danh";
+  // Tự động chọn ngẫu nhiên Đề 1 hoặc Đề 2 (Người chơi không chọn)
+  const randomSetKey = Math.random() < 0.5 ? "de1" : "de2";
 
-  // 1. ĐẢO CÂU HỎI VÀ ĐẢO ĐÁP ÁN
-  randomizedQuestions = shuffleArray(QUIZ_DATA[currentExamKey]).map(item => ({
+  // Đảo câu hỏi và đảo đáp án của từng câu
+  quizList = shuffle(QUIZ_BANK[randomSetKey]).map(item => ({
     question: item.q,
-    options: shuffleArray(item.options)
+    options: shuffle(item.options)
   }));
 
-  // 2. Render câu hỏi ra giao diện
-  const container = document.getElementById("questions-container");
-  container.innerHTML = "";
+  currentIndex = 0;
+  currentScore = 0;
 
-  randomizedQuestions.forEach((qItem, qIdx) => {
-    const card = document.createElement("div");
-    card.className = "glass-card question-item";
-
-    const optionsHtml = qItem.options.map(opt => `
-      <label class="option-item" onclick="onSelectOption(this)">
-        <input type="radio" class="option-radio" name="question_${qIdx}" value="${opt.isCorrect}" />
-        <div class="custom-bullet"></div>
-        <span>${opt.text}</span>
-      </label>
-    `).join("");
-
-    card.innerHTML = `
-      <div class="question-badge">Câu hỏi ${qIdx + 1} / 10</div>
-      <div class="question-text">${qItem.question}</div>
-      <div class="options-group">${optionsHtml}</div>
-    `;
-    container.appendChild(card);
-  });
-
-  // Chuyển màn hình
-  document.getElementById("screen-welcome").style.display = "none";
+  // Hiển thị màn hình làm bài
+  document.getElementById("screen-start").style.display = "none";
   document.getElementById("screen-quiz").style.display = "block";
-  window.scrollTo({ top: 0, behavior: "smooth" });
 
-  // 3. ĐẾM NGƯỢC 5 PHÚT (Không bị reset khi F5)
-  let endTime = localStorage.getItem(TIMER_KEY);
-  if (!endTime) {
-    endTime = Date.now() + 5 * 60 * 1000;
-    localStorage.setItem(TIMER_KEY, endTime);
+  // Bắt đầu 5 phút đếm ngược
+  let deadline = localStorage.getItem(TIMER_KEY);
+  if (!deadline) {
+    deadline = Date.now() + 5 * 60 * 1000;
+    localStorage.setItem(TIMER_KEY, deadline);
   }
-  startTimer(endTime, playerName);
+  startCountdown(deadline);
+
+  // Hiển thị câu đầu tiên
+  renderQuestion();
 }
 
-function onSelectOption(labelElement) {
-  const group = labelElement.parentElement;
-  group.querySelectorAll(".option-item").forEach(el => el.classList.remove("selected"));
-  labelElement.classList.add("selected");
-  
-  const radio = labelElement.querySelector("input[type='radio']");
-  if (radio) radio.checked = true;
+function renderQuestion() {
+  const currentQ = quizList[currentIndex];
+  document.getElementById("question-number").innerText = `Câu ${currentIndex + 1} / ${quizList.length}`;
+  document.getElementById("question-text").innerText = currentQ.question;
 
-  // Cập nhật số lượng câu đã chọn
-  const checkedCount = document.querySelectorAll("input[type='radio']:checked").length;
-  document.getElementById("progress-indicator").innerText = `Đã chọn: ${checkedCount}/10`;
+  const optionsBox = document.getElementById("options-box");
+  optionsBox.innerHTML = "";
+
+  currentQ.options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "opt-btn";
+    btn.innerText = opt.text;
+    
+    // Bấm trả lời là tự lướt qua luôn!
+    btn.onclick = () => handleAnswer(btn, opt.isCorrect);
+    optionsBox.appendChild(btn);
+  });
 }
 
-function startTimer(targetTime, playerName) {
-  const timerElement = document.getElementById("timer");
-  const timerBox = document.getElementById("timer-box");
+function handleAnswer(btnElement, isCorrect) {
+  // Khóa tất cả các nút tránh bấm nhanh nhiều lần
+  const buttons = document.querySelectorAll(".opt-btn");
+  buttons.forEach(b => b.disabled = true);
 
-  timerInterval = setInterval(() => {
-    const timeLeft = Math.max(0, Math.floor((targetTime - Date.now()) / 1000));
-    const mins = Math.floor(timeLeft / 60);
-    const secs = timeLeft % 60;
+  btnElement.classList.add("clicked");
 
-    timerElement.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  if (isCorrect) {
+    currentScore++;
+  }
 
-    if (timeLeft <= 60) {
-      timerBox.classList.add("hurry-up");
+  // Tự lướt qua câu tiếp theo sau 0.25 giây
+  setTimeout(() => {
+    currentIndex++;
+    if (currentIndex < quizList.length) {
+      renderQuestion();
+    } else {
+      finishQuiz();
+    }
+  }, 250);
+}
+
+function startCountdown(deadline) {
+  const timerTag = document.getElementById("timer");
+
+  timerId = setInterval(() => {
+    const remaining = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+
+    timerTag.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+    if (remaining <= 60) {
+      timerTag.classList.add("urgent");
     }
 
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval);
-      alert("Đã hết 5 phút quy định! Hệ thống sẽ tự động gửi bài của bạn.");
-      submitFinalScore(playerName);
+    if (remaining <= 0) {
+      clearInterval(timerId);
+      finishQuiz();
     }
   }, 1000);
 }
 
-function handleConfirmSubmit() {
-  const answered = document.querySelectorAll("input[type='radio']:checked").length;
-  let confirmMsg = "Bạn có chắc chắn muốn nộp bài thi không?";
-  if (answered < 10) {
-    confirmMsg = `Bạn mới chọn ${answered}/10 câu. Bạn vẫn muốn nộp bài chứ?`;
-  }
-
-  if (confirm(confirmMsg)) {
-    const nameVal = document.getElementById("player-name").value.trim();
-    submitFinalScore(nameVal || "Khách mời vô danh");
-  }
-}
-
-// Chấm điểm và KHÓA VĨNH VIỄN không cho thi lại
-function submitFinalScore(playerName) {
-  clearInterval(timerInterval);
+function finishQuiz() {
+  clearInterval(timerId);
   localStorage.removeItem(TIMER_KEY);
 
-  // Tính điểm kín
-  let totalScore = 0;
-  randomizedQuestions.forEach((_, qIdx) => {
-    const chosenRadio = document.querySelector(`input[name="question_${qIdx}"]:checked`);
-    if (chosenRadio && chosenRadio.value === "true") {
-      totalScore++;
-    }
-  });
-
-  const record = {
+  const payload = {
     name: playerName,
-    examName: currentExamKey === 'de1' ? 'Đề 01' : 'Đề 02',
-    score: totalScore,
-    timestamp: new Date().toLocaleTimeString('vi-VN') + " - " + new Date().toLocaleDateString('vi-VN')
+    score: currentScore,
+    total: quizList.length
   };
 
-  // Lưu vào localStorage nhằm chặn thi lại
-  localStorage.setItem(STORAGE_LOCK_KEY, JSON.stringify(record));
-
-  displayResultScreen(record);
+  // Khóa luôn trong máy, không cho làm lại
+  localStorage.setItem(LOCK_KEY, JSON.stringify(payload));
+  showResultScreen(payload);
 }
 
-// Hiển thị kết quả duy nhất (Đề đóng, không hiện đúng/sai từng câu)
-function displayResultScreen(data) {
-  document.getElementById("screen-welcome").style.display = "none";
+function showResultScreen(data) {
+  document.getElementById("screen-start").style.display = "none";
   document.getElementById("screen-quiz").style.display = "none";
   document.getElementById("screen-result").style.display = "block";
 
-  document.getElementById("result-user-info").innerText = `Thí sinh: ${data.name} • ${data.examName}`;
-  document.getElementById("result-final-score").innerText = `${data.score} / 10`;
-  document.getElementById("result-description").innerHTML = `
-    Thời gian nộp: <strong>${data.timestamp}</strong><br>
-    <em>(Mỗi người chơi chỉ được gửi bài duy nhất 1 lần)</em><br><br>
-    Hãy giữ nguyên màn hình này và đưa cho nhân viên tại Booth để nhận quà nhé!
-  `;
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  document.getElementById("result-name").innerText = data.name;
+  document.getElementById("result-score").innerText = `${data.score}/${data.total || 10}`;
 }

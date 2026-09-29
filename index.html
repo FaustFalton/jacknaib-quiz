@@ -3,81 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Eternal Waltz - JackNaib Itabooth Quiz</title>
-  <!-- Nhúng file CSS riêng -->
+  <title>Eternal Waltz Quiz</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <div class="container">
-    <!-- Header Booth -->
-    <header class="booth-header">
-      <h1 class="booth-title">Eternal Waltz</h1>
-      <div class="booth-subtitle">Hỏi Xoáy Đáp Xoay Cùng JackNaib Itabooth</div>
-      <div class="booth-tag">Color Fiesta 17</div>
-    </header>
-
-    <!-- MÀN HÌNH 1: BẮT ĐẦU & CHỌN ĐỀ -->
-    <div id="screen-welcome" class="glass-card">
-      <label class="input-label" for="player-name">Tên hoặc Nickname thám tử:</label>
-      <input type="text" id="player-name" class="text-input" placeholder="Nhập tên của bạn..." autocomplete="off" />
-
-      <label class="input-label" style="margin-top: 18px;">Chọn bộ đề thi:</label>
-      <div class="exam-grid">
-        <div class="exam-card active" onclick="chooseExam('de1')">
-          <h4>ĐỀ 01</h4>
-          <span>10 câu hỏi ngẫu nhiên</span>
-        </div>
-        <div class="exam-card" onclick="chooseExam('de2')">
-          <h4>ĐỀ 02</h4>
-          <span>10 câu hỏi ngẫu nhiên</span>
-        </div>
-      </div>
-
-      <div class="notice-box">
-        ✦ Mỗi người chơi chỉ được gửi bài <strong>duy nhất 1 lần</strong>.<br>
-        ✦ Thời gian làm bài: <strong>5 phút</strong> (hết giờ tự động nộp bài).<br>
-        ✦ Đề đóng: Hệ thống bảo mật đáp án, chỉ công bố tổng điểm sau khi nộp.
-      </div>
-
-      <button class="btn-primary" onclick="startQuiz()">BƯỚC VÀO VŨ HỘI</button>
+  <div class="quiz-wrapper">
+    <!-- Header ngắn gọn -->
+    <div class="brand-header">
+      <h1>Eternal Waltz</h1>
+      <p>JackNaib Itabooth • Color Fiesta 17</p>
     </div>
 
-    <!-- MÀN HÌNH 2: LÀM BÀI QUIZ -->
-    <div id="screen-quiz" style="display: none;">
-      <div class="quiz-top-bar">
-        <div class="timer-box" id="timer-box">
-          <span>🕯️</span> <span id="timer">05:00</span>
-        </div>
-        <div class="progress-indicator" id="progress-indicator">Đã chọn: 0/10</div>
+    <!-- MÀN HÌNH 1: NHẬP TÊN & BẮT ĐẦU -->
+    <div id="screen-start" class="card">
+      <input type="text" id="player-name" placeholder="Nhập tên của bạn..." autocomplete="off" />
+      <button class="btn-action" onclick="handleStart()">Bắt đầu làm bài</button>
+      <div class="note-simple">Thời gian: 5 phút • Mỗi người chỉ làm 1 lần</div>
+    </div>
+
+    <!-- MÀN HÌNH 2: 1 CÂU HỎI DUY NHẤT TRÊN MÀN HÌNH -->
+    <div id="screen-quiz" class="card" style="display: none;">
+      <div class="quiz-meta">
+        <span id="question-number">Câu 1/10</span>
+        <span id="timer" class="timer-tag">05:00</span>
       </div>
 
-      <div id="quiz-form">
-        <div id="questions-container"></div>
-        <button class="btn-primary" style="margin-top: 14px;" onclick="handleConfirmSubmit()">NỘP BÀI THI</button>
+      <div class="question-box">
+        <h2 id="question-text">Đang tải câu hỏi...</h2>
+        <div id="options-box" class="options-grid"></div>
       </div>
     </div>
 
-    <!-- MÀN HÌNH 3: KẾT QUẢ & KHÓA LƯỢT CHƠI -->
-    <div id="screen-result" class="glass-card result-card" style="display: none;">
-      <div class="rose-icon">🌹</div>
-      <h2 class="result-title">Kết Quả Bài Thi</h2>
-      <div class="result-user" id="result-user-info"></div>
-
-      <div class="score-display" id="result-final-score">--/10</div>
-
-      <p class="result-desc" id="result-description">
-        Cảm ơn bạn đã tham gia đố vui cùng JackNaib Itabooth tại Color Fiesta 17!<br>
-        Hãy chụp màn hình điểm số này đưa cho nhân viên booth để nhận quà nhé.
-      </p>
-    </div>
-
-    <div class="footer-text">
-      JackNaib Itabooth • Eternal Waltz © 2026
+    <!-- MÀN HÌNH 3: KẾT QUẢ ĐÓNG (CHỈ HIỆN ĐIỂM) -->
+    <div id="screen-result" class="card result-card" style="display: none;">
+      <div class="sub-title" id="result-name">Người chơi</div>
+      <div class="score-number" id="result-score">0/10</div>
+      <p class="result-msg">Bạn đã hoàn thành bài thi.<br>Hãy chụp màn hình để nhận quà tại booth nhé!</p>
     </div>
   </div>
 
-  <!-- Nhúng file Script riêng -->
   <script src="script.js"></script>
 </body>
 </html>
