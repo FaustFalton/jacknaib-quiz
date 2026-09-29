@@ -9,29 +9,30 @@
 <body>
 
   <div class="quiz-container">
-    <!-- MÀN HÌNH BẮT ĐẦU -->
+    <!-- MÀN HÌNH BẮT ĐẦU: Căn giữa, chỉ có 1 nút bấm to rõ -->
     <div id="screen-start">
       <h1>Eternal Waltz</h1>
-      <p class="subtitle">JackNaib Itabooth</p>
-      <p class="info-text">10 câu hỏi • Thời gian: 5 phút<br>Mỗi người chỉ làm 1 lần</p>
-      <button class="btn primary" onclick="startQuiz()">Bắt đầu làm bài</button>
+      <p class="sub">JackNaib Itabooth</p>
+      <div class="meta-tag">10 câu • 5 phút • Chỉ làm 1 lần</div>
+      <button type="button" class="btn-start" onclick="startQuiz()">BẮT ĐẦU LÀM BÀI</button>
     </div>
 
-    <!-- MÀN HÌNH LÀM BÀI (1 CÂU HỎI) -->
+    <!-- MÀN HÌNH CÂU HỎI: Bấm đáp án là tự nhảy câu kế tiếp -->
     <div id="screen-quiz" style="display: none;">
-      <div class="quiz-header">
-        <span id="question-count">Câu 1/10</span>
-        <span id="timer">05:00</span>
+      <div class="top-bar">
+        <span id="q-number">Câu 1/10</span>
+        <span id="timer-text">05:00</span>
       </div>
-      <h2 id="question-text">Câu hỏi...</h2>
-      <div id="options-list" class="options-group"></div>
+      <h2 id="q-content">Đang tải câu hỏi...</h2>
+      <div id="options-wrap" class="options-wrap"></div>
     </div>
 
     <!-- MÀN HÌNH KẾT QUẢ -->
     <div id="screen-result" style="display: none;">
-      <h2>Kết Quả</h2>
-      <div class="score" id="final-score">0/10</div>
-      <p class="info-text">Bạn đã hoàn thành bài thi.<br>Mỗi người chỉ được làm 1 lần duy nhất.</p>
+      <h2>KẾT QUẢ</h2>
+      <div class="score-num" id="score-text">0/10</div>
+      <p class="note">Mỗi người chỉ được làm bài 1 lần.</p>
+      <button type="button" class="btn-reset" onclick="resetQuiz()">🔄 Bấm để reset làm lại (Test)</button>
     </div>
   </div>
 
